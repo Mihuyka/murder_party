@@ -60,3 +60,9 @@ compile_commands.json
 # Cmake
 cmake-build*
 CMakeUserPresets.json
+
+# Tokens
+telegram_bot/src/server/config.py
+
+# Python venv
+.venv
