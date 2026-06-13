@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+// Игроки
+
+message PlayerInfo { // Содержит данные зарегистрированного в игре игрока
+	int64 chat_id = 1; // Telegram id участника
+	Answer answer = 2; // Хранит индекс ответа на вопрос (начинается от 0 заканчивается 3) или выбор в игре. Если игрок не определился с выбором хранит 4
+}
+
+message PlayerList {
+    map<int64, PlayerInfo> players = 1; 
+}
+
+message CorrectAnswer {
+    Answer correct_answer = 1;
+}
+
+// Квиз и мини-игры
+enum Answer
+{
+    A = 0;
+    B = 1;
+    C = 2;
+    D = 3;
+    UNSPECIFIED = 4;
+}
+
+// Мини-игра
+message MinigameRequest {
+    int64 chat_id = 1;
+    MinigameType game_type = 2;
+}
+
+enum MinigameType {
+    GAME_UNSPECIFIED = 0; // Вывести сообщение, что игрок может "расслабиться"
+    GAME_WIRES = 1; // Провода (2 кнопки)
+    GAME_POISONED_GLASS = 2; // Бокалы (3 кнопки)
+    GAME_MINESWEEPER = 3; // Минное поле (2 кнопки)
+}
+
+service BotRPC {
+    // Начало игры (Регистрация игроков)
+    rpc startRegistration(google.protobuf.Empty) returns (google.protobuf.Empty) {} // Запрашивает всех пользователей бота об участии в новой игре
+    rpc receiveRegisteredPlayers(google.protobuf.Empty) returns (PlayerList) {} // Возвращает весь список структур игрок
+
+    // Квиз
+    rpc sendNewQuestion(google.protobuf.Empty) returns (google.protobuf.Empty) {} // Начинает игру и запрашивает у игроков один из 4-х ответов (A, B, C, D) на вопрос
+    rpc receivePlayerAnswers(google.protobuf.Empty) returns (PlayerList) {} // Возвращает весь список структур игрок (вместе с выбранными ими ответами на вопрос или на мини-игру)
+    rpc correctAnswerWas(CorrectAnswer) returns (google.protobuf.Empty) {}
+
+    // Мини-игры
+    rpc assignMinigame(MinigameRequest) returns (google.protobuf.Empty) {}
+    rpc sendYoureDead(MinigameRequest) returns (google.protobuf.Empty) {}
+    rpc sendYoureAlive(MinigameRequest) returns (google.protobuf.Empty) {}
+    
+    // Конец игры (Вывод победителей)
+    rpc showWinners(PlayerList) returns (google.protobuf.Empty) {} // Завершает игру и выводит победителей
+}
