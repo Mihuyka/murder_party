@@ -62,7 +62,7 @@ cmake-build*
 CMakeUserPresets.json
 
 # Tokens
-telegram_bot/src/server/config.py
+telegram_bot/src/config.py
 
 # Python venv
 .venv
