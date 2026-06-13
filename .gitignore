@@ -64,5 +64,8 @@ CMakeUserPresets.json
 # Tokens
 telegram_bot/src/config.py
 
+# Telegram Bot storage
+telegram_bot/data
+
 # Python venv
 .venv
