@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://cpt4ub4lns7oh"]
+
+[ext_resource type="Texture2D" uid="uid://5xw4o8xip1se" path="res://frameq.png" id="1_geml4"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_du5fu"]
+texture = ExtResource("1_geml4")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sve1j"]
+bg_color = Color(0.9607843, 0.89411765, 0.7137255, 1)
+
+[node name="LosersUI" type="Node2D" unique_id=17524189]
+
+[node name="PanelContainer_l" type="PanelContainer" parent="." unique_id=844411618]
+offset_left = 192.0
+offset_top = 1.0
+offset_right = 960.0
+offset_bottom = 304.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_du5fu")
+
+[node name="MinigameStatus" type="Label" parent="." unique_id=1886786895]
+offset_left = 269.0
+offset_top = 36.0
+offset_right = 891.0
+offset_bottom = 269.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 48
+theme_override_styles/normal = SubResource("StyleBoxFlat_sve1j")
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1205711091]
+offset_top = 320.0
+offset_right = 1152.0
+offset_bottom = 648.0
+
+[node name="LosersGrid" type="GridContainer" parent="CenterContainer" unique_id=63999796]
+layout_mode = 2
+columns = 6

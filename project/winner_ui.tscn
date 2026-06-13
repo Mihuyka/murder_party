@@ -1,0 +1,80 @@
+[gd_scene format=3 uid="uid://pj4lwag0t6hd"]
+
+[ext_resource type="Texture2D" uid="uid://c7i1qkcwlybct" path="res://framea.png" id="1_74lej"]
+[ext_resource type="Texture2D" uid="uid://cr0rk0gf3a2s5" path="res://krown.png" id="1_s8nmn"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_5s1qc"]
+texture = ExtResource("1_74lej")
+
+[node name="WinnerUI" type="Control" unique_id=2036274051]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer_w" type="PanelContainer" parent="." unique_id=189717381]
+layout_mode = 0
+offset_left = 104.0
+offset_top = 48.0
+offset_right = 528.0
+offset_bottom = 152.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_5s1qc")
+
+[node name="WinnerText" type="Label" parent="." unique_id=1887715291]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 64.0
+offset_right = 512.0
+offset_bottom = 136.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 48
+text = "Победитель!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WinnerAvatar" type="TextureRect" parent="." unique_id=1851450018]
+layout_mode = 0
+offset_left = 129.0
+offset_top = 232.0
+offset_right = 511.0
+offset_bottom = 578.0
+expand_mode = 1
+
+[node name="WinnerCrown" type="TextureRect" parent="." unique_id=105722571]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 166.0
+offset_right = 514.0
+offset_bottom = 280.0
+texture = ExtResource("1_s8nmn")
+expand_mode = 1
+
+[node name="PanelContainer_s" type="PanelContainer" parent="." unique_id=2009384302]
+layout_mode = 0
+offset_left = 624.0
+offset_top = 48.0
+offset_right = 1040.0
+offset_bottom = 152.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_5s1qc")
+
+[node name="SecondPlaceText" type="Label" parent="." unique_id=825383310]
+layout_mode = 0
+offset_left = 640.0
+offset_top = 64.0
+offset_right = 1024.0
+offset_bottom = 136.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 48
+text = "Второе место"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SecondPlaceAvatar" type="TextureRect" parent="." unique_id=378091439]
+layout_mode = 0
+offset_left = 638.0
+offset_top = 222.0
+offset_right = 1020.0
+offset_bottom = 568.0
+expand_mode = 1

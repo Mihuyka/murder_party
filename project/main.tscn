@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://didpfqa11i68r"]
+
+[ext_resource type="PackedScene" uid="uid://bc24oeueejkum" path="res://trivia_ui.tscn" id="1_0xm2m"]
+[ext_resource type="Texture2D" uid="uid://cnju1qcf8qj82" path="res://whallpaper.png" id="1_1bvp3"]
+[ext_resource type="PackedScene" uid="uid://cpt4ub4lns7oh" path="res://losers_ui.tscn" id="2_h2yge"]
+[ext_resource type="PackedScene" uid="uid://pj4lwag0t6hd" path="res://winner_ui.tscn" id="3_h2yge"]
+
+[node name="Node2D" type="Node2D" unique_id=2031212497]
+
+[node name="GameManager" type="GameManager" parent="." unique_id=2120417717]
+
+[node name="TextureRect" type="TextureRect" parent="GameManager" unique_id=718907236]
+z_index = -1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_1bvp3")
+expand_mode = 1
+
+[node name="TriviaUI" parent="GameManager" unique_id=1112106345 instance=ExtResource("1_0xm2m")]
+visible = false
+
+[node name="LosersUI" parent="GameManager" unique_id=17524189 instance=ExtResource("2_h2yge")]
+visible = false
+
+[node name="WinnerUI" parent="GameManager" unique_id=2036274051 instance=ExtResource("3_h2yge")]
+visible = false
+
+[node name="LobbyUI" type="Control" parent="GameManager" unique_id=1184647802]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="GameManager/LobbyUI" unique_id=264582644]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 512.0
+
+[node name="LobbyGrid" type="GridContainer" parent="GameManager/LobbyUI/CenterContainer" unique_id=645633668]
+layout_mode = 2
+columns = 5
+
+[node name="StartButton" type="Button" parent="GameManager/LobbyUI" unique_id=1798589931]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 544.0
+offset_right = 832.0
+offset_bottom = 608.0
+theme_override_font_sizes/font_size = 36
+text = "НАЧАТЬ ИГРУ"
+
+[connection signal="pressed" from="GameManager/LobbyUI/StartButton" to="GameManager" method="_on_start_button_pressed"]

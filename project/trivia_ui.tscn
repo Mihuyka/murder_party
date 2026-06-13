@@ -1,0 +1,128 @@
+[gd_scene format=3 uid="uid://bc24oeueejkum"]
+
+[ext_resource type="Texture2D" uid="uid://ddyoa615qsive" path="res://no_circle.png" id="1_cmnaf"]
+[ext_resource type="Texture2D" uid="uid://c7i1qkcwlybct" path="res://framea.png" id="2_0mdxb"]
+[ext_resource type="Texture2D" uid="uid://d3iajngww8ewh" path="res://tcircle.png" id="2_yxmww"]
+[ext_resource type="Texture2D" uid="uid://5xw4o8xip1se" path="res://frameq.png" id="3_yxmww"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_0mdxb"]
+texture = ExtResource("3_yxmww")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yxmww"]
+bg_color = Color(0.96024394, 0.8923156, 0.7149475, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_8hkma"]
+texture = ExtResource("2_0mdxb")
+
+[node name="TriviaUI" type="Node2D" unique_id=1112106345]
+
+[node name="PanelContainer_q" type="PanelContainer" parent="." unique_id=2015581016]
+offset_top = 192.0
+offset_right = 512.0
+offset_bottom = 648.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_0mdxb")
+
+[node name="QuestionText" type="Label" parent="." unique_id=878344930]
+offset_left = 51.0
+offset_top = 244.0
+offset_right = 466.0
+offset_bottom = 596.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 36
+theme_override_styles/normal = SubResource("StyleBoxFlat_yxmww")
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PanelContainer_a1" type="PanelContainer" parent="." unique_id=766394443]
+offset_left = 688.0
+offset_top = 176.0
+offset_right = 1152.0
+offset_bottom = 272.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_8hkma")
+
+[node name="Answer1" type="Label" parent="." unique_id=180620172]
+offset_left = 704.0
+offset_top = 192.0
+offset_right = 1136.0
+offset_bottom = 256.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PanelContainer_a2" type="PanelContainer" parent="." unique_id=1617192300]
+offset_left = 688.0
+offset_top = 304.0
+offset_right = 1152.0
+offset_bottom = 400.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_8hkma")
+
+[node name="Answer2" type="Label" parent="." unique_id=1270243062]
+offset_left = 703.0
+offset_top = 320.0
+offset_right = 1136.0
+offset_bottom = 383.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PanelContainer_a3" type="PanelContainer" parent="." unique_id=2041324672]
+offset_left = 688.0
+offset_top = 432.0
+offset_right = 1152.0
+offset_bottom = 528.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_8hkma")
+
+[node name="Answer3" type="Label" parent="." unique_id=986636218]
+offset_left = 704.0
+offset_top = 448.0
+offset_right = 1136.0
+offset_bottom = 512.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PanelContainer_a4" type="PanelContainer" parent="." unique_id=1174515758]
+offset_left = 688.0
+offset_top = 552.0
+offset_right = 1152.0
+offset_bottom = 648.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_8hkma")
+
+[node name="Answer4" type="Label" parent="." unique_id=995405921]
+offset_left = 704.0
+offset_top = 568.0
+offset_right = 1136.0
+offset_bottom = 632.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="TimerBar" type="TextureProgressBar" parent="." unique_id=2027916204]
+offset_left = 544.0
+offset_top = 353.0
+offset_right = 672.0
+offset_bottom = 480.0
+max_value = 20.0
+fill_mode = 5
+texture_under = ExtResource("1_cmnaf")
+texture_progress = ExtResource("2_yxmww")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1607316259]
+offset_left = -2.0
+offset_top = -1.0
+offset_right = 1150.0
+offset_bottom = 175.0
+metadata/_edit_use_anchors_ = true
+
+[node name="TopPlayersGrid" type="GridContainer" parent="CenterContainer" unique_id=708187735]
+layout_mode = 2
+columns = 10
