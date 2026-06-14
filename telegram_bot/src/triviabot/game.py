@@ -13,7 +13,7 @@ try:
             if cleaned:
                 users.add(int(cleaned))
 except FileNotFoundError:
-    print("Файл data/users.txt не сущетсвует, ничего не записываем")
+    print("Файл data/users.txt не существует, набор пользователей не записываем")
 
 
 def addUser(userID): # True - пользователь добавлен в список, False - пользователь уже сущетсвует
