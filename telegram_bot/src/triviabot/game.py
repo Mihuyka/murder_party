@@ -16,18 +16,19 @@ except FileNotFoundError:
     print("Файл data/users.txt не существует, набор пользователей не записываем")
 
 
-def addUser(userID): # True - пользователь добавлен в список, False - пользователь уже сущетсвует
-    if userID not in users:
+def addUser(chat_id): # True - пользователь добавлен в список, False - пользователь уже сущетсвует
+    if chat_id not in users:
         with open(DB_FILE, "a+") as file:
-            users.add(int(userID))
-            file.write(str(userID) + '\n')
+            users.add(int(chat_id))
+            file.write(str(chat_id) + '\n')
             return True
     else:
          return False
     
-def addPlayer(userID):
-    addUser(userID)
-    players.players[userID].answer = murder_trivia_pb2.Answer.UNSPECIFIED
+def addPlayer(chat_id):
+    addUser(chat_id)
+    players.players[chat_id].answer = murder_trivia_pb2.Answer.UNSPECIFIED
+    players.players[chat_id].minigame = murder_trivia_pb2.MinigameType.GAME_UNSPECIFIED
 
-def removePlayer(userID):
-    del players.players[userID]
+def removePlayer(chat_id):
+    del players.players[chat_id]
