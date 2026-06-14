@@ -1,9 +1,8 @@
 import telebot
-from game import players, game_started, addPlayer, addUser, removePlayer
-from config import BOT_TOKEN
 import game
-from game import addPlayer, addUser, removePlayer
-
+from game import players, addPlayer, addUser, removePlayer
+from config import BOT_TOKEN
+import murder_trivia_pb2
 # TODO: добавить исключения для всего
 # Запуск Telegram бота
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -21,7 +20,7 @@ def start(message):
 def participating_btn(call):
     user_id = call.message.chat.id
     bot.answer_callback_query(call.id)
-    if not game_started:
+    if not game.game_started:
         addPlayer(user_id)
         bot.send_message(user_id, 'Вы подписали контракт с @Mihuyka на участие в смертельной вечеринке :)') # TODO: Поменять сообщение
     else:
@@ -32,19 +31,19 @@ def not_participating_btn(call):
     user_id = call.message.chat.id
 
     bot.answer_callback_query(call.id)
-    if not game_started:
+    if not game.game_started:
         removePlayer(user_id)
         bot.send_message(user_id, 'Вы разорвали контракт смертельной вечеринки :(') # TODO: Поменять сообщение
     else:
-        bot.send_message(user_id, 'Игра уже началассь. Что поделаешь...') # TODO: Поменять сообщение
+        bot.send_message(user_id, 'Игра уже началась. Что поделаешь...') # TODO: Поменять сообщение
 
-def set_player_answer(chat_id, answer_letter):
-    if chat_id in game.players.players:
+def set_player_answer(user_id, answer_letter):
+    if user_id in game.players.players:
         enum_value = getattr(murder_trivia_pb2.Answer, answer_letter, murder_trivia_pb2.Answer.UNSPECIFIED)
-        game.players.players[chat_id].answer = enum_value
-        bot.send_message(chat_id, f"Вариант ответа {answer_letter} учтен") # TODO: Поменять сообщение
+        game.players.players[user_id].answer = enum_value
+        bot.send_message(user_id, f"Вариант ответа {answer_letter} учтен") # TODO: Поменять сообщение
     else:
-        bot.send_message(chat_id, "Вы не в игре!") # TODO: Поменять сообщение
+        bot.send_message(user_id, "Вы не в игре!") # TODO: Поменять сообщение
 
 @bot.callback_query_handler(func=lambda call: call.data == 'answerA')
 def btn_answer_A(call):
