@@ -8,6 +8,7 @@ DB_FILE.parent.mkdir(parents=True, exist_ok=True)
 users = set()
 players = murder_trivia_pb2.PlayerList()
 game_started = False
+registration_started = False
 
 try:
     with open(DB_FILE, "r") as file:

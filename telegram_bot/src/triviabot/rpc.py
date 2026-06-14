@@ -13,6 +13,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
         keyboard.row(button_participating, button_not_participating)
 
         game.game_started = False
+        game.registration_started = True
 
         for chat_id in game.users:
             bot.send_message(chat_id, "Желаете принять участие в игре?", reply_markup=keyboard) # TODO: Поменять сообщение
@@ -23,6 +24,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
 
     def startGame(self):
         game.game_started = True
+        game.registration_started = True
         player_list = "Игра началась :) В вечеринке участвуют: " # TODO: Поменять сообщение
         for chat_id in game.players.players:
             player_list += f"@{bot.get_chat(chat_id).username} "
@@ -78,6 +80,8 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
         return empty_pb2.Empty()
     
     def showWinners(self, request, context):
+        game.game_started = False
+        game.registration_started = False
         winners_message = "Победители:\n"
         for i, chat_id in enumerate(request.players, start=1):
             chat = bot.get_chat(chat_id)
