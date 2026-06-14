@@ -33,12 +33,14 @@ GAME_POISONED_GLASS: MinigameType
 GAME_MINESWEEPER: MinigameType
 
 class PlayerInfo(_message.Message):
-    __slots__ = ("chat_id", "answer")
+    __slots__ = ("chat_id", "answer", "minigame")
     CHAT_ID_FIELD_NUMBER: _ClassVar[int]
     ANSWER_FIELD_NUMBER: _ClassVar[int]
+    MINIGAME_FIELD_NUMBER: _ClassVar[int]
     chat_id: int
     answer: Answer
-    def __init__(self, chat_id: _Optional[int] = ..., answer: _Optional[_Union[Answer, str]] = ...) -> None: ...
+    minigame: MinigameType
+    def __init__(self, chat_id: _Optional[int] = ..., answer: _Optional[_Union[Answer, str]] = ..., minigame: _Optional[_Union[MinigameType, str]] = ...) -> None: ...
 
 class PlayerList(_message.Message):
     __slots__ = ("players",)
