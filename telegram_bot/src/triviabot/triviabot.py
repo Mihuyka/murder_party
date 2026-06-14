@@ -1,7 +1,9 @@
 import telebot
 from game import players, game_started, addPlayer, addUser, removePlayer
 from config import BOT_TOKEN
-import murder_trivia_pb2
+import game
+from game import addPlayer, addUser, removePlayer
+
 # TODO: добавить исключения для всего
 # Запуск Telegram бота
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -36,61 +38,26 @@ def not_participating_btn(call):
     else:
         bot.send_message(user_id, 'Игра уже началассь. Что поделаешь...') # TODO: Поменять сообщение
 
-def start_game(): # Проверить
-    game_started = True
-    for user_id in players.players:
-        playerList = "Игра началась :) В вечеринке участвуют: "
-        for user_id in players.players:
-            playerList += "@" + bot.get_chat(user_id).username + " "
-
-        bot.send_message(user_id, playerList)
-
-def get_answers():
-    keyboard = telebot.types.InlineKeyboardMarkup()
-    Abtn = telebot.types.InlineKeyboardButton(text="A", callback_data='answerA')
-    Bbtn = telebot.types.InlineKeyboardButton(text="B", callback_data='answerB')
-    Cbtn = telebot.types.InlineKeyboardButton(text="C", callback_data='answerC')
-    Dbtn = telebot.types.InlineKeyboardButton(text="D", callback_data='answerD')
-    keyboard.row(Abtn, Bbtn, Cbtn, Dbtn)
-
-    for user_id in players.players:
-        try:
-            bot.send_message(user_id, "Выберите один из варинатов ответа: ", reply_markup=keyboard)
-        except Exception as e:
-            print(f"Ошибка отправки пользователю {user_id}: {e}")
+def set_player_answer(chat_id, answer_letter):
+    if chat_id in game.players.players:
+        enum_value = getattr(murder_trivia_pb2.Answer, answer_letter, murder_trivia_pb2.Answer.UNSPECIFIED)
+        game.players.players[chat_id].answer = enum_value
+        bot.send_message(chat_id, f"Вариант ответа {answer_letter} учтен") # TODO: Поменять сообщение
+    else:
+        bot.send_message(chat_id, "Вы не в игре!") # TODO: Поменять сообщение
 
 @bot.callback_query_handler(func=lambda call: call.data == 'answerA')
-def Abtn(call):
-    userID = call.message.chat.id
-    if userID in players.keys():
-        players[userID] = 'A'
-        bot.send_message(userID, "Вариант ответа A учитан")
-    else:
-        bot.send_message(userID, "Вы не в игре!")
+def btn_answer_A(call):
+    set_player_answer(call.message.chat.id, 'A')
 
 @bot.callback_query_handler(func=lambda call: call.data == 'answerB')
-def Bbtn(call):
-    userID = call.message.chat.id
-    if userID in players.keys():
-        players[userID] = 'C'
-        bot.send_message(userID, "Вариант ответа B учитан")
-    else:
-        bot.send_message(userID, "Вы не в игре!")
+def btn_answer_B(call):
+    set_player_answer(call.message.chat.id, 'B')
 
 @bot.callback_query_handler(func=lambda call: call.data == 'answerC')
-def Cbtn(call):
-    userID = call.message.chat.id
-    if userID in players.keys():
-        players[userID] = 'C'
-        bot.send_message(userID, "Вариант ответа C учитан")
-    else:
-        bot.send_message(userID, "Вы не в игре!")
+def btn_answer_C(call):
+    set_player_answer(call.message.chat.id, 'C')
 
 @bot.callback_query_handler(func=lambda call: call.data == 'answerD')
-def Dbtn(call):
-    userID = call.message.chat.id
-    if userID in players.keys():
-        players[userID] = 'D'
-        bot.send_message(userID, "Вариант ответа D учитан")
-    else:
-        bot.send_message(userID, "Вы не в игре!")
+def btn_answer_D(call):
+    set_player_answer(call.message.chat.id, 'D')
