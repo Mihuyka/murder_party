@@ -1,6 +1,9 @@
 import murder_trivia_pb2
+from pathlib import Path
 
-DB_FILE = "../data/users.txt"
+BASE_DIR = Path(__file__).resolve().parent
+DB_FILE = BASE_DIR / ".." / ".." / "data" / "users.txt"
+DB_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 users = set()
 players = murder_trivia_pb2.PlayerList()
