@@ -7,6 +7,7 @@ import "google/protobuf/empty.proto";
 message PlayerInfo { // Содержит данные зарегистрированного в игре игрока
 	int64 chat_id = 1; // Telegram id участника
 	Answer answer = 2; // Хранит индекс ответа на вопрос (начинается от 0 заканчивается 3) или выбор в игре. Если игрок не определился с выбором хранит 4
+    MinigameType minigame = 3;
 }
 
 message PlayerList {
