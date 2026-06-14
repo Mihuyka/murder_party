@@ -2,8 +2,8 @@ import murder_trivia_pb2_grpc
 import murder_trivia_pb2
 from google.protobuf import empty_pb2
 import telebot
-import game
-from triviabot import bot
+import triviabot.game as game
+from triviabot.triviabot import bot
 
 class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
     def startRegistration(self, request, context):

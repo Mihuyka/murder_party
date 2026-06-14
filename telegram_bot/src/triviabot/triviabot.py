@@ -1,6 +1,6 @@
 import telebot
-import game
-from game import players, addPlayer, addUser, removePlayer
+import triviabot.game as game
+from triviabot.game import players, addPlayer, addUser, removePlayer
 from config import BOT_TOKEN
 import murder_trivia_pb2
 # TODO: добавить исключения для всего
