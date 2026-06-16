@@ -27,7 +27,7 @@ def participating_btn(call):
         else:
             bot.send_message(user_id, 'Игра уже началась, не тыкай, а то пальцы отрежем') 
     else:
-        bot.send_message(user_id, 'Регистрация ещё не началась!') # TODO: Поменять сообщение
+        bot.send_message(user_id, 'Запись на верную смерть ещё не началась!') 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'not_participating')
 def not_participating_btn(call):
