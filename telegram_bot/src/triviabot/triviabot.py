@@ -25,7 +25,7 @@ def participating_btn(call):
             addPlayer(user_id)
             bot.send_message(user_id, 'Вы подписали контракт с @Mihuyka на участие в смертельной вечеринке :)') # TODO: Поменять сообщение
         else:
-            bot.send_message(user_id, 'Игра уже началассь. Что поделаешь...') # TODO: Поменять сообщение
+            bot.send_message(user_id, 'Игра уже началась, не тыкай, а то пальцы отрежем') 
     else:
         bot.send_message(user_id, 'Регистрация ещё не началась!') # TODO: Поменять сообщение
 
