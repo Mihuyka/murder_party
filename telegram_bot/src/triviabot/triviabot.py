@@ -50,7 +50,7 @@ def set_player_answer(user_id, answer_letter):
             game.players.players[user_id].answer = enum_value
             bot.send_message(user_id, f"Вариант ответа {answer_letter} учтен") # TODO: Поменять сообщение
         else:
-            bot.send_message(user_id, "Вы не в игре!") # TODO: Поменять сообщение
+            bot.send_message(user_id, "Убери свои руки, я тебя не знаю") 
     else:
         bot.send_message(user_id, "Игра ещё не запущена!") # TODO: Поменять сообщение
 
