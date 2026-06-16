@@ -9,7 +9,7 @@ Install gRPC and pyTelegramBotAPI python packages:
 ```
 pip install grpcio grpcio-tools pyTelegramBotAPI
 ```
-Supply your Telegram bot token with the token you have received from [@BotFather](tg://resolve?domain=BotFather) into `src/server/config.py` like showcased bellow:
+Supply your Telegram bot token with the token you have received from [@BotFather](tg://resolve?domain=BotFather) into `src/config.py` like showcased bellow:
 ```
 BOT_TOKEN='1234567890:ABCDEFGHIJKLMnopqrstuvwxyz'
 ```
