@@ -76,7 +76,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
         return empty_pb2.Empty()
     
     def sendYoureAlive(self, request, context):
-        bot.send_message(request.chat_id, "Вы живы!") # TODO: Поменять сообщение
+        bot.send_message(request.chat_id, "Блин, вы выжили :(") 
         return empty_pb2.Empty()
     
     def showWinners(self, request, context):
