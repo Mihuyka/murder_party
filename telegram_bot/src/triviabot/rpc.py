@@ -54,7 +54,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
             if game.players.players[chat_id] == request.correct_answer:
                 bot.send_message(chat_id, "Вы угадали :), правильный ответ был: ") # TODO: Поменять сообщение
             else:
-                bot.send_message(chat_id, "Вы не угадали :(, правильный ответ был: ") # TODO: Поменять сообщение
+                bot.send_message(chat_id, "Неверно :), правильный ответ был: ") 
         return empty_pb2.Empty()
     
     def assignMinigame(self, request, context):
