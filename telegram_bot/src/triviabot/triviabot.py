@@ -46,26 +46,21 @@ def not_participating_btn(call):
 def set_player_answer(user_id, answer_letter):
     if game.game_started:
         if user_id in game.players.players:
-            enum_value = getattr(murder_trivia_pb2.Answer, answer_letter, murder_trivia_pb2.Answer.UNSPECIFIED)
-            game.players.players[user_id].answer = enum_value
-            bot.send_message(user_id, f"Вариант ответа {answer_letter} учтен") # TODO: Поменять сообщение
+            try:
+                enum_value = murder_trivia_pb2.Answer.Value(answer_letter)
+                game.players.players[user_id].answer = enum_value
+                bot.send_message(user_id, f"Вариант ответа {answer_letter} учтен") # TODO: Поменять сообщение
+            except ValueError:
+                enum_value = murder_trivia_pb2.Answer.UNSPECIFIED
+                bot.send_message(user_id, "Такого ответа не существует!") # TODO: Поменять сообщение
         else:
             bot.send_message(user_id, "Убери свои руки, я тебя не знаю") 
     else:
         bot.send_message(user_id, "Веселье ещё впереди :)") 
 
-@bot.callback_query_handler(func=lambda call: call.data == 'answerA')
-def btn_answer_A(call):
-    set_player_answer(call.message.chat.id, 'A')
-
-@bot.callback_query_handler(func=lambda call: call.data == 'answerB')
-def btn_answer_B(call):
-    set_player_answer(call.message.chat.id, 'B')
-
-@bot.callback_query_handler(func=lambda call: call.data == 'answerC')
-def btn_answer_C(call):
-    set_player_answer(call.message.chat.id, 'C')
-
-@bot.callback_query_handler(func=lambda call: call.data == 'answerD')
-def btn_answer_D(call):
-    set_player_answer(call.message.chat.id, 'D')
+@bot.callback_query_handler(func=lambda call: call.data.startswith('answer'))
+def btn_answer_handler(call):
+    answer_letter = call.data.replace('answer', '')
+    user_id = call.from_user.id
+    set_player_answer(user_id, answer_letter)
+    bot.answer_callback_query(call.id)
