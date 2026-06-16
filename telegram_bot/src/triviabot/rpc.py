@@ -16,7 +16,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
         game.registration_started = True
 
         for chat_id in game.users:
-            bot.send_message(chat_id, "Желаете принять участие в игре?", reply_markup=keyboard) # TODO: Поменять сообщение
+            bot.send_message(chat_id, "Готовы ли вы обменять свою душу?", reply_markup=keyboard)
         return empty_pb2.Empty()
             
     def receiveRegisteredPlayers(self, request, context):
