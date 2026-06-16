@@ -52,7 +52,7 @@ def set_player_answer(user_id, answer_letter):
         else:
             bot.send_message(user_id, "Убери свои руки, я тебя не знаю") 
     else:
-        bot.send_message(user_id, "Игра ещё не запущена!") # TODO: Поменять сообщение
+        bot.send_message(user_id, "Веселье ещё впереди :)") 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'answerA')
 def btn_answer_A(call):
