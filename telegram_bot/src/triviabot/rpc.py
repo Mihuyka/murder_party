@@ -55,7 +55,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
         Dbtn = telebot.types.InlineKeyboardButton(text="D", callback_data='answerD')
         keyboard.row(Abtn, Bbtn, Cbtn, Dbtn)
 
-        question = f"Выберите один из вариантов ответа:\n A) {request.A}\nB) {request.B}\nC) {request.C}\nD) {request.D}"
+        question = f"Выберите один из вариантов ответа:\nA) {request.A}\nB) {request.B}\nC) {request.C}\nD) {request.D}"
         for chat_id in game.players.players:
             game.players.players[chat_id].answer = murder_trivia_pb2.Answer.UNSPECIFIED
             try:

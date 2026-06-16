@@ -10,6 +10,10 @@
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/array.hpp>
 #include <vector>
+#include <memory>
+#include <grpcpp/grpcpp.h>
+#include "murder_trivia.pb.h"
+#include "murder_trivia.grpc.pb.h"
 
 namespace godot {
 
@@ -43,7 +47,7 @@ class GameManager : public Node {
     GDCLASS(GameManager, Node)
 
 private:
-    std::vector<Question> questions_list;   // Список всех вопросов
+    std::vector<godot::Question> questions_list;   // Список всех вопросов
     std::vector<PlayerProfile> profiles_db; // База всех зарегистрированных игроков
     std::vector<Player> players_list;       // Игроки в текущем лобби/матче
     std::vector<int> current_losers_indices; // Индексы игроков, которые ошиблись и попали в мини-игру
@@ -68,7 +72,10 @@ private:
     // false -> игра играет сама в себя (тестовый режим)
     // true  -> игра ждет данные от бота Telegram (боевой режим)
     // =========================================================
-    bool use_real_players = false; 
+    bool use_real_players; 
+
+    // gRPC клиент для связи с Python-ботом
+    std::unique_ptr<::BotRPC::Stub> stub_;
 
     // Внутренние методы логики
     void load_questions_from_csv();
@@ -83,6 +90,17 @@ private:
     void run_minigame_wires(std::vector<int>& died_now, Label* status_label, GridContainer* grid);
     void run_minigame_poison(std::vector<int>& died_now, Label* status_label, GridContainer* grid);
     void run_minigame_minefield(std::vector<int>& died_now, Label* status_label, GridContainer* grid);
+
+    // Вспомогательные gRPC методы отправки и получения данных
+    void fetch_player_answers();
+    void fetch_registered_players();
+    void call_start_registration();
+    void call_send_new_question(const godot::Question& q);
+    void call_correct_answer_was(int correct_idx);
+    void call_assign_minigame(int64_t chat_id, int minigame_type);
+    void call_send_youre_dead(int64_t chat_id);
+    void call_send_youre_alive(int64_t chat_id);
+    void call_show_winners();
 
 protected:
     static void _bind_methods();
@@ -99,25 +117,6 @@ public:
     void show_lobby();
     void update_lobby_ui();
     void _on_start_button_pressed(); // Вызывается кнопкой "НАЧАТЬ ИГРУ" из интерфейса
-
-    // =========================================================================
-    // API ДЛЯ ТЕЛЕГРАМ БОТА (ВЫЗЫВАЕТСЯ ИЗВНЕ)
-    // =========================================================================
-    
-    // Регистрация в лобби
-    void api_bot_register_player(String tg_id);
-    
-    // Ответ на главный вопрос: 0, 1, 2, 3
-    void api_bot_receive_answer(String tg_id, int answer_index);
-    
-    // Провода: 0 = Красный, 1 = Синий
-    void api_bot_minigame_wires(String tg_id, int wire_index);
-    
-    // Бокалы: 0 = Первый, 1 = Второй, 2 = Третий
-    void api_bot_minigame_cups(String tg_id, int cup_index);
-    
-    // Минное поле: 0 = Левая, 1 = Правая
-    void api_bot_minigame_minefield(String tg_id, int path_index);
 };
 
 }

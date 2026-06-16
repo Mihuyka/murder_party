@@ -11,14 +11,6 @@ using namespace godot;
 void GameManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("start_game"), &GameManager::start_game);
     ClassDB::bind_method(D_METHOD("_on_start_button_pressed"), &GameManager::_on_start_button_pressed);
-    
-    // РЕГИСТРАЦИЯ API ДЛЯ БОТА
-    // Эти функции будут видны в GDScript! Вызывать так: $GameManager.api_bot_register_player("1234")
-    ClassDB::bind_method(D_METHOD("api_bot_register_player", "tg_id"), &GameManager::api_bot_register_player);
-    ClassDB::bind_method(D_METHOD("api_bot_receive_answer", "tg_id", "answer_index"), &GameManager::api_bot_receive_answer);
-    ClassDB::bind_method(D_METHOD("api_bot_minigame_wires", "tg_id", "wire_index"), &GameManager::api_bot_minigame_wires);
-    ClassDB::bind_method(D_METHOD("api_bot_minigame_cups", "tg_id", "cup_index"), &GameManager::api_bot_minigame_cups);
-    ClassDB::bind_method(D_METHOD("api_bot_minigame_minefield", "tg_id", "path_index"), &GameManager::api_bot_minigame_minefield);
 }
 
 GameManager::GameManager() {
@@ -29,9 +21,12 @@ GameManager::GameManager() {
     current_state = 3; // Старт с экрана лобби
     current_minigame_idx = 0;
     
-    // ВНИМАНИЕ: Для тестов без бота оставь false.
-    // Когда бот будет готов слать ID, поменяй на true!
-    use_real_players = false; 
+    // Включаем gRPC интеграцию по умолчанию!
+    use_real_players = true; 
+
+    // Настраиваем gRPC канал к Python боту, запущенному локально
+    auto channel = grpc::CreateChannel("127.0.0.1:50051", grpc::InsecureChannelCredentials());
+    stub_ = ::BotRPC::NewStub(channel);
 }
 
 GameManager::~GameManager() {}
@@ -43,6 +38,20 @@ void GameManager::_ready() {
 }
 
 void GameManager::_process(double delta) {
+    // Переменная для контроля частоты опроса gRPC
+    static double lobby_update_timer = 0.0;
+
+    if (current_state == 3) { // Мы в лобби / регистрации
+        lobby_update_timer += delta;
+        if (lobby_update_timer >= 1.0) { // Опрашиваем бота раз в 1 секунду
+            lobby_update_timer = 0.0;
+            if (use_real_players) {
+                fetch_registered_players();
+            }
+        }   
+        return; // Прекращаем выполнение логики игры, пока мы в лобби
+    }
+
     if (!is_timer_running) return;
 
     time_left -= delta;
@@ -54,12 +63,11 @@ void GameManager::_process(double delta) {
     }
 
     // СИМУЛЯЦИЯ ИГРОКОВ (Если use_real_players = false)
-    // За 0.2 сек до конца таймера боты делают случайный выбор
     if (!use_real_players && time_left > 0.0 && time_left < 0.2) {
         if (current_state == 0) {
             for (int i = 0; i < players_list.size(); i++) {
                 if (players_list[i].is_alive && players_list[i].selected_answer == -1) {
-                    api_bot_receive_answer(players_list[i].telegram_id, rand() % 4);
+                    players_list[i].selected_answer = rand() % 4; 
                 }
             }
         } else if (current_state == 1) {
@@ -70,23 +78,25 @@ void GameManager::_process(double delta) {
                     if (current_minigame_idx == 0) r_choice = rand() % 2;
                     else if (current_minigame_idx == 1) r_choice = rand() % 3;
                     else r_choice = rand() % 2;
-
-                    if (current_minigame_idx == 0) api_bot_minigame_wires(players_list[idx].telegram_id, r_choice);
-                    else if (current_minigame_idx == 1) api_bot_minigame_cups(players_list[idx].telegram_id, r_choice);
-                    else api_bot_minigame_minefield(players_list[idx].telegram_id, r_choice);
+                    players_list[idx].minigame_choice = r_choice; 
                 }
             }
         }
     }
 
-    // ОБРАБОТКА ОКОНЧАНИЯ ТАЙМЕРА (АВТОМАТИЧЕСКАЯ ПРОСТАНОВКА ИНДЕКСА 4 ДЛЯ ОПОЗДАВШИХ)
+    // ОБРАБОТКА ОКОНЧАНИЯ ТАЙМЕРА
     if (time_left <= 0.0) {
         is_timer_running = false;
+        
+        // Получаем ответы от бота по gRPC
+        if (use_real_players) {
+            fetch_player_answers();
+        }
         
         if (current_state == 0) {
             for (int i = 0; i < players_list.size(); i++) {
                 if (players_list[i].is_alive && players_list[i].selected_answer == -1) {
-                    api_bot_receive_answer(players_list[i].telegram_id, 4); 
+                    players_list[i].selected_answer = 4; // Не ответил
                 }
             }
             end_round();
@@ -94,9 +104,7 @@ void GameManager::_process(double delta) {
             for (int i = 0; i < current_losers_indices.size(); i++) {
                 int idx = current_losers_indices[i];
                 if (players_list[idx].minigame_choice == -1) {
-                    if (current_minigame_idx == 0) api_bot_minigame_wires(players_list[idx].telegram_id, 4);
-                    else if (current_minigame_idx == 1) api_bot_minigame_cups(players_list[idx].telegram_id, 4);
-                    else api_bot_minigame_minefield(players_list[idx].telegram_id, 4);
+                    players_list[idx].minigame_choice = 4; // Не сделал выбор в мини-игры
                 }
             }
             process_minigame();
@@ -125,6 +133,11 @@ void GameManager::show_lobby() {
     if (trivia_ui) trivia_ui->set_visible(false);
     if (losers_ui) losers_ui->set_visible(false);
     if (winner_ui) winner_ui->set_visible(false);
+
+    // Запускаем сбор и регистрацию игроков в Telegram
+    if (use_real_players) {
+        call_start_registration();
+    }
 
     update_lobby_ui();
 }
@@ -163,15 +176,30 @@ void GameManager::update_lobby_ui() {
 void GameManager::_on_start_button_pressed() {
     if (current_state != 3) return; 
 
-    // Если мы без реальных игроков, заполняем лобби тестовыми данными
-    if (!use_real_players && players_list.empty()) {
-        for (int i = 0; i < 5; i++) {
-            if (i < profiles_db.size()) {
-                api_bot_register_player(profiles_db[i].telegram_id);
+    // Если играем с ботами, генерируем фейков
+    if (!use_real_players) {
+        if (players_list.empty()) {
+            for (int i = 0; i < 5 && i < profiles_db.size(); i++) {
+                Player p;
+                p.telegram_id = profiles_db[i].telegram_id;
+                p.name = profiles_db[i].name;
+                p.avatar_path = profiles_db[i].avatar_path;
+                p.score = 0;
+                p.is_alive = true;
+                p.selected_answer = -1;
+                p.minigame_choice = -1;
+                players_list.push_back(p);
             }
         }
     }
 
+    // Если реальные игроки не подключились, не даем запустить пустую игру
+    if (players_list.empty()) {
+        UtilityFunctions::print("Cannot start game: No players registered!");
+        return;
+    }
+
+    // Переходим к игре
     start_game();
 }
 
@@ -184,97 +212,6 @@ void GameManager::start_game() {
     if (!questions_list.empty()) display_question();
 }
 
-// =========================================================================================
-// API ДЛЯ ИНТЕГРАЦИИ С ТЕЛЕГРАМ БОТОМ (ЭТО ДЛЯ ТВОЕГО ТОВАРИЩА)
-// Инструкция:
-// 1. Бот ловит нажатия кнопок в Telegram.
-// 2. Скрипт (Godot) принимает Webhook/Polling.
-// 3. Скрипт вызывает нужную функцию у узла GameManager, передавая ID игрока и индекс кнопки.
-// =========================================================================================
-
-void GameManager::api_bot_register_player(String tg_id) {
-    // 1. Проверяем, не в лобби ли этот игрок уже
-    for (int i = 0; i < players_list.size(); i++) {
-        if (players_list[i].telegram_id == tg_id) return; 
-    }
-
-    // 2. Ищем игрока в нашей загруженной CSV базе
-    for (int i = 0; i < profiles_db.size(); i++) {
-        if (profiles_db[i].telegram_id == tg_id) {
-            Player new_player;
-            new_player.telegram_id = profiles_db[i].telegram_id;
-            new_player.name = profiles_db[i].name;
-            new_player.avatar_path = profiles_db[i].avatar_path;
-            new_player.score = 0;
-            new_player.is_alive = true;
-            new_player.selected_answer = -1;
-            new_player.minigame_choice = -1;
-            players_list.push_back(new_player);
-            
-            if (current_state == 3) update_lobby_ui(); 
-            return; 
-        }
-    }
-
-    // 3. Если игрок не найден в базе, создаем гостя с дефолтной картинкой
-    Player unknown_player;
-    unknown_player.telegram_id = tg_id;
-    unknown_player.name = String(L"Гость_") + tg_id.substr(0, 4); 
-    unknown_player.avatar_path = "res://avatars/default.png"; // <-- ДЕФОЛТНАЯ АВАТАРКА
-    unknown_player.score = 0;
-    unknown_player.is_alive = true;
-    unknown_player.selected_answer = -1;
-    unknown_player.minigame_choice = -1;
-    players_list.push_back(unknown_player);
-
-    if (current_state == 3) update_lobby_ui(); 
-}
-
-// Принимает 0, 1, 2, 3 (или 4 от самой игры при таймауте)
-void GameManager::api_bot_receive_answer(String tg_id, int answer_index) {
-    if (current_state != 0) return; 
-    for (int i = 0; i < players_list.size(); i++) {
-        if (players_list[i].telegram_id == tg_id && players_list[i].is_alive && players_list[i].selected_answer == -1) {
-            players_list[i].selected_answer = answer_index;
-            break;
-        }
-    }
-}
-
-// Принимает 0 (Красный), 1 (Синий). (Или 4 при таймауте)
-void GameManager::api_bot_minigame_wires(String tg_id, int wire_index) {
-    if (current_state != 1 || current_minigame_idx != 0) return;
-    for (int i = 0; i < players_list.size(); i++) {
-        if (players_list[i].telegram_id == tg_id) {
-            players_list[i].minigame_choice = wire_index;
-            break;
-        }
-    }
-}
-
-// Принимает 0 (Первый), 1 (Второй), 2 (Третий). (Или 4 при таймауте)
-void GameManager::api_bot_minigame_cups(String tg_id, int cup_index) {
-    if (current_state != 1 || current_minigame_idx != 1) return;
-    for (int i = 0; i < players_list.size(); i++) {
-        if (players_list[i].telegram_id == tg_id) {
-            players_list[i].minigame_choice = cup_index;
-            break;
-        }
-    }
-}
-
-// Принимает 0 (Левая), 1 (Правая). (Или 4 при таймауте)
-void GameManager::api_bot_minigame_minefield(String tg_id, int path_index) {
-    if (current_state != 1 || current_minigame_idx != 2) return;
-    for (int i = 0; i < players_list.size(); i++) {
-        if (players_list[i].telegram_id == tg_id) {
-            players_list[i].minigame_choice = path_index;
-            break;
-        }
-    }
-}
-// =========================================================================================
-
 void GameManager::load_profiles_from_csv() {
     String file_path = "res://players.csv";
     if (!FileAccess::file_exists(file_path)) return;
@@ -286,7 +223,7 @@ void GameManager::load_profiles_from_csv() {
         PackedStringArray row = file->get_csv_line(",");
         if (row.size() < 3) continue;
         PlayerProfile p;
-        p.telegram_id = row[0].strip_edges(); // Очистка невидимых символов (\r)
+        p.telegram_id = row[0].strip_edges(); 
         p.name = row[1].strip_edges();
         p.avatar_path = row[2].strip_edges(); 
         profiles_db.push_back(p);
@@ -303,7 +240,7 @@ void GameManager::load_questions_from_csv() {
     while (!file->eof_reached()) {
         PackedStringArray row = file->get_csv_line(",");
         if (row.size() < 6) continue;
-        Question q;
+        godot::Question q;
         q.text = row[0].strip_edges();
         q.answers.push_back(row[1].strip_edges());
         q.answers.push_back(row[2].strip_edges());
@@ -335,7 +272,7 @@ void GameManager::display_question() {
     if (losers_ui) losers_ui->set_visible(false);
     if (winner_ui) winner_ui->set_visible(false);
 
-    Question current_q = questions_list[current_q_idx];
+    godot::Question current_q = questions_list[current_q_idx];
     Label* question_label = get_node<Label>("TriviaUI/QuestionText");
     if (question_label) question_label->set_text(current_q.text);
 
@@ -380,6 +317,10 @@ void GameManager::display_question() {
     time_left = 20.0; 
     max_time_for_state = 20.0;
     is_timer_running = true;
+
+    if (use_real_players) {
+        call_send_new_question(current_q);
+    }
 }
 
 void GameManager::end_round() {
@@ -394,6 +335,10 @@ void GameManager::end_round() {
                 current_losers_indices.push_back(i); 
             }
         }
+    }
+
+    if (use_real_players) {
+        call_correct_answer_was(correct_idx);
     }
     
     if (current_losers_indices.size() > 0) {
@@ -447,6 +392,26 @@ void GameManager::show_losers() {
         }
     }
 
+    // Рассылаем мини-игры игрокам в Telegram
+    if (use_real_players) {
+        for (int i = 0; i < players_list.size(); i++) {
+            if (players_list[i].is_alive) {
+                int64_t chat_id = std::stoll(players_list[i].telegram_id.utf8().get_data());
+                
+                // Проверяем, проиграл ли игрок в этом раунде
+                bool is_loser = (std::find(current_losers_indices.begin(), current_losers_indices.end(), i) != current_losers_indices.end());
+                if (is_loser) {
+                    // +1 потому что в proto типы мини-игр начинаются с 1
+                    int minigame_type = current_minigame_idx + 1;
+                    call_assign_minigame(chat_id, minigame_type);
+                } else {
+                    // Игрок угадал ответ, даем ему расслабиться (GAME_UNSPECIFIED)
+                    call_assign_minigame(chat_id, 0); 
+                }
+            }
+        }
+    }
+
     time_left = 5.0; 
     max_time_for_state = 5.0;
     is_timer_running = true;
@@ -464,6 +429,19 @@ void GameManager::process_minigame() {
     else run_minigame_minefield(died_now, status_label, grid);
     
     prevent_total_wipeout(died_now, status_label, grid);
+
+    // Уведомляем каждого участника мини-игры о его судьбе
+    if (use_real_players) {
+        for (int idx : current_losers_indices) {
+            int64_t chat_id = std::stoll(players_list[idx].telegram_id.utf8().get_data());
+            if (!players_list[idx].is_alive) {
+                call_send_youre_dead(chat_id);
+            } else {
+                call_send_youre_alive(chat_id);
+            }
+        }
+    }
+
     current_minigame_idx = (current_minigame_idx + 1) % 3;
     
     time_left = 5.0;
@@ -602,5 +580,190 @@ void GameManager::show_winner() {
             sec_avatar->set_texture(tex);
             sec_avatar->set_modulate(Color(1.0, 1.0, 1.0, 0.6)); 
         }
+    }
+
+    if (use_real_players) {
+        call_show_winners();
+    }
+}
+
+// =========================================================================
+// gRPC Вспомогательные методы отправки и получения данных
+// =========================================================================
+
+void GameManager::fetch_player_answers() {
+    if (!stub_) return;
+    google::protobuf::Empty request;
+    ::PlayerList response;
+    grpc::ClientContext context;
+    
+    auto status = stub_->receivePlayerAnswers(&context, request, &response);
+    if (!status.ok()) {
+        UtilityFunctions::print("gRPC receivePlayerAnswers failed: ", status.error_message().c_str());
+        return;
+    }
+
+    for (const auto& pair : response.players()) {
+        String tg_id = String::num_int64(pair.first);
+        int ans = pair.second.answer(); 
+
+        for (int i = 0; i < players_list.size(); i++) {
+            if (players_list[i].telegram_id == tg_id) {
+                if (current_state == 0 && players_list[i].is_alive) {
+                    players_list[i].selected_answer = ans;
+                } else if (current_state == 1 && ans != 4) { 
+                    players_list[i].minigame_choice = ans;
+                }
+                break;
+            }
+        }
+    }
+}
+
+void GameManager::fetch_registered_players() {
+    if (!stub_) return;
+    
+    google::protobuf::Empty request;
+    ::PlayerList response;
+    grpc::ClientContext context;
+
+    auto status = stub_->receiveRegisteredPlayers(&context, request, &response);
+    if (!status.ok()) {
+        UtilityFunctions::print("gRPC receiveRegisteredPlayers failed: ", status.error_message().c_str());
+        return;
+    }
+
+    players_list.clear();
+
+    for (const auto& pair : response.players()) {
+        String tg_id = String::num_int64(pair.first);
+        
+        Player p;
+        p.telegram_id = tg_id;
+        p.name = "Unknown (" + tg_id + ")";
+        p.avatar_path = "res://avatars/default.png"; 
+        p.score = 0;
+        p.is_alive = true;
+        p.selected_answer = -1;
+        p.minigame_choice = -1;
+
+        for (int i = 0; i < profiles_db.size(); i++) {
+            if (profiles_db[i].telegram_id == tg_id) {
+                p.name = profiles_db[i].name;
+                p.avatar_path = profiles_db[i].avatar_path;
+                break;
+            }
+        }
+        
+        players_list.push_back(p);
+    }
+
+    update_lobby_ui();
+}
+
+void GameManager::call_start_registration() {
+    if (!stub_) return;
+    google::protobuf::Empty request;
+    google::protobuf::Empty response;
+    grpc::ClientContext context;
+    
+    auto status = stub_->startRegistration(&context, request, &response);
+    if (!status.ok()) {
+        UtilityFunctions::print("gRPC startRegistration failed: ", status.error_message().c_str());
+    }
+}
+
+void GameManager::call_send_new_question(const godot::Question& q) {
+    if (!stub_) return;
+    ::Question request;
+    if (q.answers.size() > 0) request.set_a(q.answers[0].utf8().get_data());
+    if (q.answers.size() > 1) request.set_b(q.answers[1].utf8().get_data());
+    if (q.answers.size() > 2) request.set_c(q.answers[2].utf8().get_data());
+    if (q.answers.size() > 3) request.set_d(q.answers[3].utf8().get_data());
+
+    google::protobuf::Empty response;
+    grpc::ClientContext context;
+    
+    auto status = stub_->sendNewQuestion(&context, request, &response);
+    if (!status.ok()) {
+        UtilityFunctions::print("gRPC sendNewQuestion failed: ", status.error_message().c_str());
+    }
+}
+
+void GameManager::call_correct_answer_was(int correct_idx) {
+    if (!stub_) return;
+    ::CorrectAnswer request;
+    request.set_correct_answer(static_cast<::Answer>(correct_idx));
+    
+    google::protobuf::Empty response;
+    grpc::ClientContext context;
+    
+    auto status = stub_->correctAnswerWas(&context, request, &response);
+    if (!status.ok()) {
+        UtilityFunctions::print("gRPC correctAnswerWas failed: ", status.error_message().c_str());
+    }
+}
+
+void GameManager::call_assign_minigame(int64_t chat_id, int minigame_type) {
+    if (!stub_) return;
+    ::MinigameRequest request;
+    request.set_chat_id(chat_id);
+    request.set_game_type(static_cast<::MinigameType>(minigame_type));
+
+    google::protobuf::Empty response;
+    grpc::ClientContext context;
+    
+    auto status = stub_->assignMinigame(&context, request, &response);
+    if (!status.ok()) {
+        UtilityFunctions::print("gRPC assignMinigame failed: ", status.error_message().c_str());
+    }
+}
+
+void GameManager::call_send_youre_dead(int64_t chat_id) {
+    if (!stub_) return;
+    ::MinigameRequest request;
+    request.set_chat_id(chat_id);
+
+    google::protobuf::Empty response;
+    grpc::ClientContext context;
+    
+    auto status = stub_->sendYoureDead(&context, request, &response);
+    if (!status.ok()) {
+        UtilityFunctions::print("gRPC sendYoureDead failed: ", status.error_message().c_str());
+    }
+}
+
+void GameManager::call_send_youre_alive(int64_t chat_id) {
+    if (!stub_) return;
+    ::MinigameRequest request;
+    request.set_chat_id(chat_id);
+
+    google::protobuf::Empty response;
+    grpc::ClientContext context;
+    
+    auto status = stub_->sendYoureAlive(&context, request, &response);
+    if (!status.ok()) {
+        UtilityFunctions::print("gRPC sendYoureAlive failed: ", status.error_message().c_str());
+    }
+}
+
+void GameManager::call_show_winners() {
+    if (!stub_) return;
+    ::PlayerList request;
+    for (const auto& p : players_list) {
+        if (p.is_alive) {
+            int64_t chat_id = std::stoll(p.telegram_id.utf8().get_data());
+            ::PlayerInfo info;
+            info.set_chat_id(chat_id);
+            (*request.mutable_players())[chat_id] = info;
+        }
+    }
+
+    google::protobuf::Empty response;
+    grpc::ClientContext context;
+    
+    auto status = stub_->showWinners(&context, request, &response);
+    if (!status.ok()) {
+        UtilityFunctions::print("gRPC showWinners failed: ", status.error_message().c_str());
     }
 }
