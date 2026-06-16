@@ -43,6 +43,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
         keyboard.row(Abtn, Bbtn, Cbtn, Dbtn)
 
         for chat_id in game.players.players:
+            game.players.players[chat_id].answer = murder_trivia_pb2.Answer.UNSPECIFIED
             bot.send_message(chat_id, "Выберите один из варинатов ответа: ", reply_markup=keyboard)
         return empty_pb2.Empty()
     
@@ -60,6 +61,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
     def assignMinigame(self, request, context):
         chat_id = request.chat_id
         game.players.players[chat_id].minigame = request.game_type
+        game.players.players[chat_id].answer = murder_trivia_pb2.Answer.UNSPECIFIED
         match(request.game_type):
             case murder_trivia_pb2.GAME_UNSPECIFIED:  # TODO: Сделать миниигры
                 pass
