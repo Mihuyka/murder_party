@@ -25,7 +25,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
     def startGame(self):
         game.game_started = True
         game.registration_started = True
-        player_list = "Игра началась :) В вечеринке участвуют: " # TODO: Поменять сообщение
+        player_list = "Геноцид начался! Далее жертвы: " 
         for chat_id in game.players.players:
             player_list += f"@{bot.get_chat(chat_id).username} "
         for chat_id in game.players.players:       
