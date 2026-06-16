@@ -41,7 +41,7 @@ def not_participating_btn(call):
         else:
             bot.send_message(user_id, 'Игра уже началась, не тыкай, а то пальцы отрежем') 
     else:
-        bot.send_message(user_id, 'Регистрация ещё не началась, вас пока нет в списке игрков!') # TODO: Поменять сообщение
+        bot.send_message(user_id, 'Кто ты, странник, и что ты тут делаешь?')
 
 def set_player_answer(user_id, answer_letter):
     if game.game_started:
