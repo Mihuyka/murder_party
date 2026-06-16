@@ -4,6 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 DB_FILE = BASE_DIR / ".." / ".." / "data" / "users.txt"
 DB_FILE.parent.mkdir(parents=True, exist_ok=True)
+IMAGE_PATH = BASE_DIR / ".." / ".." / ".." / "project"
 
 users = set()
 players = murder_trivia_pb2.PlayerList()

@@ -4,6 +4,7 @@ from google.protobuf import empty_pb2
 import telebot
 import triviabot.game as game
 from triviabot.triviabot import bot
+from game import IMAGE_PATH
 
 class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
     def startRegistration(self, request, context):
@@ -36,8 +37,8 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
         if game.game_started == False:
             self.startGame()
         keyboard = telebot.types.InlineKeyboardMarkup()
-        Abtn = telebot.types.InlineKeyboardButton(text="A", callback_data='answerA')
-        Bbtn = telebot.types.InlineKeyboardButton(text="B", callback_data='answerB')
+        Abtn = telebot.types.InlineKeyboardButton(text="🅰️", callback_data='answerA')
+        Bbtn = telebot.types.InlineKeyboardButton(text="🅱️", callback_data='answerB')
         Cbtn = telebot.types.InlineKeyboardButton(text="C", callback_data='answerC')
         Dbtn = telebot.types.InlineKeyboardButton(text="D", callback_data='answerD')
         keyboard.row(Abtn, Bbtn, Cbtn, Dbtn)
@@ -53,7 +54,7 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
     def correctAnswerWas(self, request, context):
         for chat_id in game.players.players:
             if game.players.players[chat_id] == request.correct_answer:
-                bot.send_message(chat_id, "Вы угадали :), правильный ответ был: ") # TODO: Поменять сообщение
+                bot.send_message(chat_id, "Вы угадали :)")
             else:
                 bot.send_message(chat_id, "Неверно :), правильный ответ был: ") 
         return empty_pb2.Empty()
@@ -63,15 +64,49 @@ class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
         game.players.players[chat_id].minigame = request.game_type
         game.players.players[chat_id].answer = murder_trivia_pb2.Answer.UNSPECIFIED
         match(request.game_type):
-            case murder_trivia_pb2.GAME_UNSPECIFIED:  # TODO: Сделать миниигры
-                pass
+            case murder_trivia_pb2.GAME_UNSPECIFIED:
+                bot.send_message(chat_id, "Молодец... Маленький, молодец. Так уж и быть, пока живи, наблюдай как остальные умирают. НО НЕ РАССЛАБЛЯЙСЯ!1!!! До тебя очередь ещё дойдёт очередь... ахпвахахахаххах", reply_markup=keyboard)
             case murder_trivia_pb2.GAME_WIRES:
-                pass
+                self.wiresMinigame(chat_id)
             case murder_trivia_pb2.GAME_POISONED_GLASS:
-                pass
+                self.poisonedGlassMinigame(chat_id)
             case murder_trivia_pb2.GAME_MINESWEEPER:
-                pass
+                self.minesweeperMinigame(chat_id)
         return empty_pb2.Empty()
+    
+    def wiresMinigame(chat_id):
+        try:
+            keyboard = telebot.types.InlineKeyboardMarkup()
+            blue_wire = telebot.types.InlineKeyboardButton(text="🟦 Синий провод", callback_data='blue_wire')
+            red_wire = telebot.types.InlineKeyboardButton(text="🔴 Красный провод", callback_data='red_wire')
+            keyboard.row(red_wire, blue_wire)
+            with open(IMAGE_PATH / "wires.webp", 'rb') as wires:
+                bot.send_photo(chat_id, wires, caption="Ну что поиграем) Вы работате электриком в небольшой деревушке под Соколом. Перед вами 2 кабеля: фаза и земля, но какой из них фаза, а какой земля вы не знаете. Бабки и не кого рядом нету( Выберите кабель:")
+        except FileNotFoundError:
+            print(f"Ошибка: Файл не найден по пути:\n{IMAGE_PATH.resolve() / "wires.webp"}")
+    
+    def poisonedGlassMinigame(chat_id):
+        try:
+            keyboard = telebot.types.InlineKeyboardMarkup()
+            glass1 = telebot.types.InlineKeyboardButton(text="🍷 Подозрительно прозрачный бокал", callback_data='glass1')
+            glass2 = telebot.types.InlineKeyboardButton(text="🍸 Светло-зелёный бокал", callback_data='glass2')
+            glass3 = telebot.types.InlineKeyboardButton(text="🥃 Небольшая рюмка", callback_data='glass3')
+            keyboard.row(glass1, glass2, glass3)
+            with open(IMAGE_PATH / "poisoned_glass.jpg", 'rb') as wires:
+                bot.send_photo(chat_id, wires, caption="Ну что поиграем) В гостях у белочки вам предложили выпить, но есть нюанс, в один из бокалов белочка налила снатворное. Пейте, на здоровье!")
+        except FileNotFoundError:
+            print(f"Ошибка: Файл не найден по пути:\n{IMAGE_PATH.resolve() / "wires.webp"}")
+
+    def minesweeperMinigame(chat_id):
+        try:
+            keyboard = telebot.types.InlineKeyboardMarkup()
+            left = telebot.types.InlineKeyboardButton(text="⬅️ Налево", callback_data='left')
+            right = telebot.types.InlineKeyboardButton(text="➡️ Направо", callback_data='right')
+            keyboard.row(left, right)
+            with open(IMAGE_PATH / "wires.webp", 'rb') as wires:
+                bot.send_photo(chat_id, wires, caption="Ну что поиграем) Вам предложили неплохую подработку на лето: разминировать целое минное поле. Пока вы живи, у вас есть выбор сначла пройтись по правой или левой тропинке. Выбирайте с умом!")
+        except FileNotFoundError:
+            print(f"Ошибка: Файл не найден по пути:\n{IMAGE_PATH.resolve() / "wires.webp"}")
     
     def sendYoureDead(self, request, context):
         bot.send_message(request.chat_id, "Вы сдохли! Но на этом игра не заканчивается") 
