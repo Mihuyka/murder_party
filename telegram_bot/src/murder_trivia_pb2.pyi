@@ -68,3 +68,15 @@ class MinigameRequest(_message.Message):
     chat_id: int
     game_type: MinigameType
     def __init__(self, chat_id: _Optional[int] = ..., game_type: _Optional[_Union[MinigameType, str]] = ...) -> None: ...
+
+class Question(_message.Message):
+    __slots__ = ("A", "B", "C", "D")
+    A_FIELD_NUMBER: _ClassVar[int]
+    B_FIELD_NUMBER: _ClassVar[int]
+    C_FIELD_NUMBER: _ClassVar[int]
+    D_FIELD_NUMBER: _ClassVar[int]
+    A: str
+    B: str
+    C: str
+    D: str
+    def __init__(self, A: _Optional[str] = ..., B: _Optional[str] = ..., C: _Optional[str] = ..., D: _Optional[str] = ...) -> None: ...

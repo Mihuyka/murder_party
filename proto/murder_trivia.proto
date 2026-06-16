@@ -41,13 +41,20 @@ enum MinigameType {
     GAME_MINESWEEPER = 3; // Минное поле (2 кнопки)
 }
 
+message Question {
+    string A = 1;
+    string B = 2;
+    string C = 3;
+    string D = 4;
+}
+
 service BotRPC {
     // Начало игры (Регистрация игроков)
     rpc startRegistration(google.protobuf.Empty) returns (google.protobuf.Empty) {} // Запрашивает всех пользователей бота об участии в новой игре
     rpc receiveRegisteredPlayers(google.protobuf.Empty) returns (PlayerList) {} // Возвращает весь список структур игрок
 
     // Квиз
-    rpc sendNewQuestion(google.protobuf.Empty) returns (google.protobuf.Empty) {} // Начинает игру и запрашивает у игроков один из 4-х ответов (A, B, C, D) на вопрос
+    rpc sendNewQuestion(Question) returns (google.protobuf.Empty) {} // Начинает игру и запрашивает у игроков один из 4-х ответов (A, B, C, D) на вопрос
     rpc receivePlayerAnswers(google.protobuf.Empty) returns (PlayerList) {} // Возвращает весь список структур игрок (вместе с выбранными ими ответами на вопрос или на мини-игру)
     rpc correctAnswerWas(CorrectAnswer) returns (google.protobuf.Empty) {}
 

@@ -3,7 +3,8 @@ import triviabot.game as game
 from triviabot.game import players, addPlayer, addUser, removePlayer
 from config import BOT_TOKEN
 import murder_trivia_pb2
-# TODO: добавить исключения для всего
+import logging
+
 # Запуск Telegram бота
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -21,96 +22,175 @@ def start(message):
 def participating_btn(call):
     user_id = call.message.chat.id
     bot.answer_callback_query(call.id)
-    if game.registration_started:
-        if not game.game_started:
+    try:
+        if game.registration_started and not game.game_started:
             addPlayer(user_id)
-            bot.send_message(user_id, 'Вы подписали контракт с @Mihuyka на участие в смертельной вечеринке :)') 
+            bot.send_message(user_id, 'Вы подписали контракт с @Mihuyka на участие в смертельной вечеринке :)')
+        elif game.game_started:
+            bot.send_message(user_id, 'Игра уже началась, не тыкай, а то пальцы отрежем')
         else:
-            bot.send_message(user_id, 'Игра уже началась, не тыкай, а то пальцы отрежем') 
-    else:
-        bot.send_message(user_id, 'Запись на верную смерть ещё не началась!') 
+            bot.send_message(user_id, 'Запись на верную смерть ещё не началась!')
+    except Exception as e:
+        logging.error(f"Ошибка в participating_btn для {user_id}: {e}")
+        bot.send_message(user_id, "Произошла ошибка, попробуйте позже.")
 
 @bot.callback_query_handler(func=lambda call: call.data == 'not_participating')
 def not_participating_btn(call):
     user_id = call.message.chat.id
-
     bot.answer_callback_query(call.id)
-    if game.registration_started:
-        if not game.game_started:
-            removePlayer(user_id)
-            bot.send_message(user_id, 'Вы разорвали контракт смертельной вечеринки :(') 
+    try:
+        if game.registration_started and not game.game_started:
+            if user_id in game.players.players:
+                removePlayer(user_id)
+                bot.send_message(user_id, 'Вы разорвали контракт смертельной вечеринки :(')
+            else:
+                bot.send_message(user_id, 'Вы и так не участвуете.')
+        elif game.game_started:
+            bot.send_message(user_id, 'Игра уже началась, не тыкай, а то пальцы отрежем')
         else:
-            bot.send_message(user_id, 'Игра уже началась, не тыкай, а то пальцы отрежем') 
-    else:
-        bot.send_message(user_id, 'Кто ты, странник, и что ты тут делаешь?')
-
-def set_player_answer(user_id, answer_letter):
-    if game.game_started:
-        if user_id in game.players.players:
-            try:
-                enum_value = murder_trivia_pb2.Answer.Value(answer_letter)
-                game.players.players[user_id].answer = enum_value
-                bot.send_message(user_id, f"Вариант ответа {answer_letter} учтен. Вы точно уверены в своем ответе?") # TODO: Поменять сообщение
-            except ValueError:
-                enum_value = murder_trivia_pb2.Answer.UNSPECIFIED
-                bot.send_message(user_id, "Такого ответа не существует!") # TODO: Поменять сообщение
-        else:
-            bot.send_message(user_id, "Убери свои руки, я тебя не знаю") 
-    else:
-        bot.send_message(user_id, "Веселье ещё впереди :)") 
+            bot.send_message(user_id, 'Кто ты, странник, и что ты тут делаешь?')
+    except Exception as e:
+        logging.error(f"Ошибка в not_participating_btn для {user_id}: {e}")
+        bot.send_message(user_id, "Произошла ошибка, попробуйте позже.")
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('answer'))
-def btn_answer_handler(call):
+def answer_handler(call):
+    user_id = call.from_user.id
     answer_letter = call.data.replace('answer', '')
-    user_id = call.from_user.id
-    set_player_answer(user_id, answer_letter)
     bot.answer_callback_query(call.id)
+    
+    if not game.game_started:
+        bot.send_message(user_id, "Веселье ещё впереди :)")
+        return
+    if user_id not in game.players.players:
+        bot.send_message(user_id, "Убери свои руки, я тебя не знаю")
+        return
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('red_wire'))
-def btn_answer_handler(call):
-    user_id = call.from_user.id
-    game.players.players[user_id].answer = murder_trivia_pb2.Answer.A
-    bot.send_message(user_id, f"Вы выбрали 🔴 красный провод. Вы точно уверены, что это не \"фаза\"?")
-    bot.answer_callback_query(call.id)
+    try:
+        enum_value = murder_trivia_pb2.Answer.Value(answer_letter)
+        game.players.players[user_id].answer = enum_value
+        bot.send_message(user_id, f"Вариант ответа {answer_letter} учтён. Вы точно уверены в своём ответе?")
+    except ValueError:
+        bot.send_message(user_id, "Такого ответа не существует!")
+    except Exception as e:
+        logging.error(f"Ошибка в answer_handler для {user_id}: {e}")
+        bot.send_message(user_id, "Ошибка при сохранении ответа.")
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('blue_wire'))
-def btn_answer_handler(call):
+@bot.callback_query_handler(func=lambda call: call.data == 'red_wire')
+def red_wire_handler(call):
     user_id = call.from_user.id
-    game.players.players[user_id].answer = murder_trivia_pb2.Answer.B
-    bot.send_message(user_id, f"Вы выбрали 🟦 Синий провод. Вы думаете это \"земля\"?")
     bot.answer_callback_query(call.id)
+    if not game.game_started:
+        bot.send_message(user_id, "Игра не активна.")
+        return
+    if user_id not in game.players.players:
+        bot.send_message(user_id, "Вы не участвуете в игре.")
+        return
+    try:
+        game.players.players[user_id].answer = murder_trivia_pb2.Answer.A
+        bot.send_message(user_id, "Вы выбрали 🔴 красный провод. Вы точно уверены, что это не \"фаза\"?")
+    except Exception as e:
+        logging.error(f"Ошибка в red_wire_handler для {user_id}: {e}")
+        bot.send_message(user_id, "Ошибка при сохранении ответа.")
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('left'))
-def btn_answer_handler(call):
+@bot.callback_query_handler(func=lambda call: call.data == 'blue_wire')
+def blue_wire_handler(call):
     user_id = call.from_user.id
-    game.players.players[user_id].answer = murder_trivia_pb2.Answer.A
-    bot.send_message(user_id, f"Вы решили пойти ⬅️ налево. Вы точно уверены в своем ответе?")
     bot.answer_callback_query(call.id)
+    if not game.game_started:
+        bot.send_message(user_id, "Игра не активна.")
+        return
+    if user_id not in game.players.players:
+        bot.send_message(user_id, "Вы не участвуете в игре.")
+        return
+    try:
+        game.players.players[user_id].answer = murder_trivia_pb2.Answer.B
+        bot.send_message(user_id, "Вы выбрали 🟦 Синий провод. Вы думаете это \"земля\"?")
+    except Exception as e:
+        logging.error(f"Ошибка в blue_wire_handler для {user_id}: {e}")
+        bot.send_message(user_id, "Ошибка при сохранении ответа.")
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('right'))
-def btn_answer_handler(call):
+@bot.callback_query_handler(func=lambda call: call.data == 'left')
+def left_handler(call):
     user_id = call.from_user.id
-    game.players.players[user_id].answer = murder_trivia_pb2.Answer.B
-    bot.send_message(user_id, f"Вы решили пойти ➡️ направо. Там случайно нет мины?")
     bot.answer_callback_query(call.id)
+    if not game.game_started:
+        bot.send_message(user_id, "Игра не активна.")
+        return
+    if user_id not in game.players.players:
+        bot.send_message(user_id, "Вы не участвуете в игре.")
+        return
+    try:
+        game.players.players[user_id].answer = murder_trivia_pb2.Answer.A
+        bot.send_message(user_id, "Вы решили пойти ⬅️ налево. Вы точно уверены в своем ответе?")
+    except Exception as e:
+        logging.error(f"Ошибка в left_handler для {user_id}: {e}")
+        bot.send_message(user_id, "Ошибка при сохранении ответа.")
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('glass1'))
-def btn_answer_handler(call):
+@bot.callback_query_handler(func=lambda call: call.data == 'right')
+def right_handler(call):
     user_id = call.from_user.id
-    game.players.players[user_id].answer = murder_trivia_pb2.Answer.A
-    bot.send_message(user_id, f"Вы собираетесь выпить из 🍷 подозрительно прозрачного бокала. Точно ли там вино?")
     bot.answer_callback_query(call.id)
+    if not game.game_started:
+        bot.send_message(user_id, "Игра не активна.")
+        return
+    if user_id not in game.players.players:
+        bot.send_message(user_id, "Вы не участвуете в игре.")
+        return
+    try:
+        game.players.players[user_id].answer = murder_trivia_pb2.Answer.B
+        bot.send_message(user_id, "Вы решили пойти ➡️ направо. Там случайно нет мины?")
+    except Exception as e:
+        logging.error(f"Ошибка в right_handler для {user_id}: {e}")
+        bot.send_message(user_id, "Ошибка при сохранении ответа.")
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('glass2'))
-def btn_answer_handler(call):
+@bot.callback_query_handler(func=lambda call: call.data == 'glass1')
+def glass1_handler(call):
     user_id = call.from_user.id
-    game.players.players[user_id].answer = murder_trivia_pb2.Answer.B
-    bot.send_message(user_id, f"Вы собираетесь выпить из 🍸 светло-зелёного бокала. Он точно не отравлен?")
     bot.answer_callback_query(call.id)
+    if not game.game_started:
+        bot.send_message(user_id, "Игра не активна.")
+        return
+    if user_id not in game.players.players:
+        bot.send_message(user_id, "Вы не участвуете в игре.")
+        return
+    try:
+        game.players.players[user_id].answer = murder_trivia_pb2.Answer.A
+        bot.send_message(user_id, "Вы собираетесь выпить из 🍷 подозрительно прозрачного бокала. Точно ли там вино?")
+    except Exception as e:
+        logging.error(f"Ошибка в glass1_handler для {user_id}: {e}")
+        bot.send_message(user_id, "Ошибка при сохранении ответа.")
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('glass3'))
-def btn_answer_handler(call):
+@bot.callback_query_handler(func=lambda call: call.data == 'glass2')
+def glass2_handler(call):
     user_id = call.from_user.id
-    game.players.players[user_id].answer = murder_trivia_pb2.Answer.C
-    bot.send_message(user_id, f"Вы собираетесь выпить из 🥃 небольшая рюмки. Не желаете сменить свой ответ?")
     bot.answer_callback_query(call.id)
+    if not game.game_started:
+        bot.send_message(user_id, "Игра не активна.")
+        return
+    if user_id not in game.players.players:
+        bot.send_message(user_id, "Вы не участвуете в игре.")
+        return
+    try:
+        game.players.players[user_id].answer = murder_trivia_pb2.Answer.B
+        bot.send_message(user_id, "Вы собираетесь выпить из 🍸 светло-зелёного бокала. Он точно не отравлен?")
+    except Exception as e:
+        logging.error(f"Ошибка в glass2_handler для {user_id}: {e}")
+        bot.send_message(user_id, "Ошибка при сохранении ответа.")
+
+@bot.callback_query_handler(func=lambda call: call.data == 'glass3')
+def glass3_handler(call):
+    user_id = call.from_user.id
+    bot.answer_callback_query(call.id)
+    if not game.game_started:
+        bot.send_message(user_id, "Игра не активна.")
+        return
+    if user_id not in game.players.players:
+        bot.send_message(user_id, "Вы не участвуете в игре.")
+        return
+    try:
+        game.players.players[user_id].answer = murder_trivia_pb2.Answer.C
+        bot.send_message(user_id, "Вы собираетесь выпить из 🥃 небольшая рюмки. Не желаете сменить свой ответ?")
+    except Exception as e:
+        logging.error(f"Ошибка в glass3_handler для {user_id}: {e}")
+        bot.send_message(user_id, "Ошибка при сохранении ответа.")

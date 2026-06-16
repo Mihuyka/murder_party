@@ -12,6 +12,15 @@ set(GODOT_PROJECT_DIR "project" CACHE STRING "The directory of a Godot project f
 find_package(Python3 3.4 REQUIRED)
 find_program(GIT git REQUIRED)
 
+# Use pkg-config for gRPC and Protobuf
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GRPC REQUIRED grpc++ grpc)
+pkg_check_modules(PROTOBUF REQUIRED protobuf)
+
+# Find protoc and grpc_cpp_plugin
+find_program(PROTOC protoc REQUIRED)
+find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin REQUIRED)
+
 # Ensure godot-cpp submodule has been updated
 if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/godot-cpp/src")
     message(NOTICE "godot-cpp bindings source not found")
@@ -49,6 +58,60 @@ project(godot-cpp-template
     LANGUAGES CXX
 )
 
+# Set protobuf and gRPC directories
+set(PROTO_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
+set(PROTO_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/proto_gen")
+
+# Create directories for generated protobuf files
+file(MAKE_DIRECTORY ${PROTO_GEN_DIR})
+file(MAKE_DIRECTORY "${PROTO_GEN_DIR}/include")
+file(MAKE_DIRECTORY "${PROTO_GEN_DIR}/src")
+
+# Set protobuf files
+set(PROTO_FILES
+    "${PROTO_SRC_DIR}/murder_trivia.proto"
+)
+
+# Generate C++ files from protobuf
+set(PROTO_SRCS)
+set(PROTO_HDRS)
+set(GRPC_SRCS)
+set(GRPC_HDRS)
+
+foreach(PROTO_FILE ${PROTO_FILES})
+    get_filename_component(PROTO_NAME ${PROTO_FILE} NAME_WE)
+    get_filename_component(PROTO_PATH ${PROTO_FILE} DIRECTORY)
+    
+    # Generate protobuf C++ files
+    list(APPEND PROTO_SRCS "${PROTO_GEN_DIR}/${PROTO_NAME}.pb.cc")
+    list(APPEND PROTO_HDRS "${PROTO_GEN_DIR}/${PROTO_NAME}.pb.h")
+    
+    # Generate gRPC C++ files
+    list(APPEND GRPC_SRCS "${PROTO_GEN_DIR}/${PROTO_NAME}.grpc.pb.cc")
+    list(APPEND GRPC_HDRS "${PROTO_GEN_DIR}/${PROTO_NAME}.grpc.pb.h")
+    
+    add_custom_command(
+        OUTPUT 
+            "${PROTO_GEN_DIR}/${PROTO_NAME}.pb.cc"
+            "${PROTO_GEN_DIR}/${PROTO_NAME}.pb.h"
+            "${PROTO_GEN_DIR}/${PROTO_NAME}.grpc.pb.cc"
+            "${PROTO_GEN_DIR}/${PROTO_NAME}.grpc.pb.h"
+        COMMAND ${PROTOC}
+            ARGS 
+                --proto_path=${PROTO_SRC_DIR}
+                --cpp_out=${PROTO_GEN_DIR}
+                --grpc_out=${PROTO_GEN_DIR}
+                --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN}
+                ${PROTO_FILE}
+        DEPENDS ${PROTO_FILE}
+        COMMENT "Generating C++ code from ${PROTO_FILE}"
+        VERBATIM
+    )
+endforeach()
+
+# Create a target for proto generation
+add_custom_target(proto_gen DEPENDS ${PROTO_SRCS} ${PROTO_HDRS} ${GRPC_SRCS} ${GRPC_HDRS})
+
 add_library(${LIBNAME} SHARED)
 
 target_sources(${LIBNAME}
@@ -57,6 +120,17 @@ target_sources(${LIBNAME}
     src/game_manager.h
     src/register_types.cpp
     src/register_types.h
+    ${PROTO_SRCS}
+    ${GRPC_SRCS}
+)
+
+# Include directories for protobuf and gRPC
+target_include_directories(${LIBNAME}
+    PRIVATE
+    ${PROTO_GEN_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${PROTOBUF_INCLUDE_DIRS}
+    ${GRPC_INCLUDE_DIRS}
 )
 
 # Fetch a list of the xml files to use for documentation and add to our target
@@ -69,10 +143,32 @@ if(DOC_XML)
     endif()
 endif()
 
-target_link_libraries(${LIBNAME} PRIVATE godot-cpp)
+# Link gRPC and Protobuf libraries
+target_link_libraries(${LIBNAME} 
+    PRIVATE 
+    godot-cpp
+    ${GRPC_LIBRARIES}
+    ${PROTOBUF_LIBRARIES}
+)
+
+# Add dependency on proto_gen target
+add_dependencies(${LIBNAME} proto_gen)
 
 # Require at least C++17 for this target
 set_property(TARGET ${LIBNAME} PROPERTY CXX_STANDARD 17)
+
+# Enable necessary compiler flags for gRPC/Protobuf
+target_compile_definitions(${LIBNAME}
+    PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:_WIN32_WINNT=0x0601>
+)
+
+# Add necessary compile options for gRPC/Protobuf
+target_compile_options(${LIBNAME}
+    PRIVATE
+    ${GRPC_CFLAGS_OTHER}
+    ${PROTOBUF_CFLAGS_OTHER}
+)
 
 set_target_properties(${LIBNAME}
     PROPERTIES

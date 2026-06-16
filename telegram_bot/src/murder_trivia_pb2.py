@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13murder_trivia.proto\x1a\x1bgoogle/protobuf/empty.proto\"W\n\nPlayerInfo\x12\x0f\n\x07\x63hat_id\x18\x01 \x01(\x03\x12\x17\n\x06\x61nswer\x18\x02 \x01(\x0e\x32\x07.Answer\x12\x1f\n\x08minigame\x18\x03 \x01(\x0e\x32\r.MinigameType\"t\n\nPlayerList\x12)\n\x07players\x18\x01 \x03(\x0b\x32\x18.PlayerList.PlayersEntry\x1a;\n\x0cPlayersEntry\x12\x0b\n\x03key\x18\x01 \x01(\x03\x12\x1a\n\x05value\x18\x02 \x01(\x0b\x32\x0b.PlayerInfo:\x02\x38\x01\"0\n\rCorrectAnswer\x12\x1f\n\x0e\x63orrect_answer\x18\x01 \x01(\x0e\x32\x07.Answer\"D\n\x0fMinigameRequest\x12\x0f\n\x07\x63hat_id\x18\x01 \x01(\x03\x12 \n\tgame_type\x18\x02 \x01(\x0e\x32\r.MinigameType*5\n\x06\x41nswer\x12\x05\n\x01\x41\x10\x00\x12\x05\n\x01\x42\x10\x01\x12\x05\n\x01\x43\x10\x02\x12\x05\n\x01\x44\x10\x03\x12\x0f\n\x0bUNSPECIFIED\x10\x04*c\n\x0cMinigameType\x12\x14\n\x10GAME_UNSPECIFIED\x10\x00\x12\x0e\n\nGAME_WIRES\x10\x01\x12\x17\n\x13GAME_POISONED_GLASS\x10\x02\x12\x14\n\x10GAME_MINESWEEPER\x10\x03\x32\xc3\x04\n\x06\x42otRPC\x12\x45\n\x11startRegistration\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x12\x41\n\x18receiveRegisteredPlayers\x12\x16.google.protobuf.Empty\x1a\x0b.PlayerList\"\x00\x12\x43\n\x0fsendNewQuestion\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x12=\n\x14receivePlayerAnswers\x12\x16.google.protobuf.Empty\x1a\x0b.PlayerList\"\x00\x12<\n\x10\x63orrectAnswerWas\x12\x0e.CorrectAnswer\x1a\x16.google.protobuf.Empty\"\x00\x12<\n\x0e\x61ssignMinigame\x12\x10.MinigameRequest\x1a\x16.google.protobuf.Empty\"\x00\x12;\n\rsendYoureDead\x12\x10.MinigameRequest\x1a\x16.google.protobuf.Empty\"\x00\x12<\n\x0esendYoureAlive\x12\x10.MinigameRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x34\n\x0bshowWinners\x12\x0b.PlayerList\x1a\x16.google.protobuf.Empty\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13murder_trivia.proto\x1a\x1bgoogle/protobuf/empty.proto\"W\n\nPlayerInfo\x12\x0f\n\x07\x63hat_id\x18\x01 \x01(\x03\x12\x17\n\x06\x61nswer\x18\x02 \x01(\x0e\x32\x07.Answer\x12\x1f\n\x08minigame\x18\x03 \x01(\x0e\x32\r.MinigameType\"t\n\nPlayerList\x12)\n\x07players\x18\x01 \x03(\x0b\x32\x18.PlayerList.PlayersEntry\x1a;\n\x0cPlayersEntry\x12\x0b\n\x03key\x18\x01 \x01(\x03\x12\x1a\n\x05value\x18\x02 \x01(\x0b\x32\x0b.PlayerInfo:\x02\x38\x01\"0\n\rCorrectAnswer\x12\x1f\n\x0e\x63orrect_answer\x18\x01 \x01(\x0e\x32\x07.Answer\"D\n\x0fMinigameRequest\x12\x0f\n\x07\x63hat_id\x18\x01 \x01(\x03\x12 \n\tgame_type\x18\x02 \x01(\x0e\x32\r.MinigameType\"6\n\x08Question\x12\t\n\x01\x41\x18\x01 \x01(\t\x12\t\n\x01\x42\x18\x02 \x01(\t\x12\t\n\x01\x43\x18\x03 \x01(\t\x12\t\n\x01\x44\x18\x04 \x01(\t*5\n\x06\x41nswer\x12\x05\n\x01\x41\x10\x00\x12\x05\n\x01\x42\x10\x01\x12\x05\n\x01\x43\x10\x02\x12\x05\n\x01\x44\x10\x03\x12\x0f\n\x0bUNSPECIFIED\x10\x04*c\n\x0cMinigameType\x12\x14\n\x10GAME_UNSPECIFIED\x10\x00\x12\x0e\n\nGAME_WIRES\x10\x01\x12\x17\n\x13GAME_POISONED_GLASS\x10\x02\x12\x14\n\x10GAME_MINESWEEPER\x10\x03\x32\xb6\x04\n\x06\x42otRPC\x12\x45\n\x11startRegistration\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x12\x41\n\x18receiveRegisteredPlayers\x12\x16.google.protobuf.Empty\x1a\x0b.PlayerList\"\x00\x12\x36\n\x0fsendNewQuestion\x12\t.Question\x1a\x16.google.protobuf.Empty\"\x00\x12=\n\x14receivePlayerAnswers\x12\x16.google.protobuf.Empty\x1a\x0b.PlayerList\"\x00\x12<\n\x10\x63orrectAnswerWas\x12\x0e.CorrectAnswer\x1a\x16.google.protobuf.Empty\"\x00\x12<\n\x0e\x61ssignMinigame\x12\x10.MinigameRequest\x1a\x16.google.protobuf.Empty\"\x00\x12;\n\rsendYoureDead\x12\x10.MinigameRequest\x1a\x16.google.protobuf.Empty\"\x00\x12<\n\x0esendYoureAlive\x12\x10.MinigameRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x34\n\x0bshowWinners\x12\x0b.PlayerList\x1a\x16.google.protobuf.Empty\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,10 +34,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_PLAYERLIST_PLAYERSENTRY']._loaded_options = None
   _globals['_PLAYERLIST_PLAYERSENTRY']._serialized_options = b'8\001'
-  _globals['_ANSWER']._serialized_start=379
-  _globals['_ANSWER']._serialized_end=432
-  _globals['_MINIGAMETYPE']._serialized_start=434
-  _globals['_MINIGAMETYPE']._serialized_end=533
+  _globals['_ANSWER']._serialized_start=435
+  _globals['_ANSWER']._serialized_end=488
+  _globals['_MINIGAMETYPE']._serialized_start=490
+  _globals['_MINIGAMETYPE']._serialized_end=589
   _globals['_PLAYERINFO']._serialized_start=52
   _globals['_PLAYERINFO']._serialized_end=139
   _globals['_PLAYERLIST']._serialized_start=141
@@ -48,6 +48,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CORRECTANSWER']._serialized_end=307
   _globals['_MINIGAMEREQUEST']._serialized_start=309
   _globals['_MINIGAMEREQUEST']._serialized_end=377
-  _globals['_BOTRPC']._serialized_start=536
-  _globals['_BOTRPC']._serialized_end=1115
+  _globals['_QUESTION']._serialized_start=379
+  _globals['_QUESTION']._serialized_end=433
+  _globals['_BOTRPC']._serialized_start=592
+  _globals['_BOTRPC']._serialized_end=1158
 # @@protoc_insertion_point(module_scope)
