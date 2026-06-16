@@ -37,7 +37,7 @@ def not_participating_btn(call):
     if game.registration_started:
         if not game.game_started:
             removePlayer(user_id)
-            bot.send_message(user_id, 'Вы разорвали контракт смертельной вечеринки :(') # TODO: Поменять сообщение
+            bot.send_message(user_id, 'Вы разорвали контракт смертельной вечеринки :(') 
         else:
             bot.send_message(user_id, 'Игра уже началась. Что поделаешь...') # TODO: Поменять сообщение
     else:
