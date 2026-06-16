@@ -15,10 +15,5 @@ BOT_TOKEN='1234567890:ABCDEFGHIJKLMnopqrstuvwxyz'
 ```
 Then, you can run the Telegram bot:
 ```
-make server
+make all
 ```
-To play the game you will need to start the conversation with your Telegram bot. After that you can launch the game with:
-```
-make client
-```
-The bot should ask if you would like to join, answer yes. That's all, enjoy the trivia!
