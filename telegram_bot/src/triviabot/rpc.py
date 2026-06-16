@@ -4,7 +4,7 @@ from google.protobuf import empty_pb2
 import telebot
 import triviabot.game as game
 from triviabot.triviabot import bot
-from game import IMAGE_PATH
+from triviabot.game import IMAGE_PATH
 
 class BotRPC(murder_trivia_pb2_grpc.BotRPCServicer):
     def startRegistration(self, request, context):
