@@ -1,15 +1,29 @@
-# Using the same minimum as the godot-cpp project
 cmake_minimum_required(VERSION 3.17)
 
-# Silence unused variable warning when specified from toolchain
-if(CMAKE_C_COMPILER)
-endif()
+project(godot-cpp-template
+    VERSION 1.0
+    DESCRIPTION "This repository serves as a quickstart template for GDExtension development with Godot 4.0+."
+    HOMEPAGE_URL "https://github.com/enetheru/godot-cpp-template/tree/main"
+    LANGUAGES CXX
+)
 
-set(LIBNAME "EXTENSION-NAME") # "The name of the library"
+set(LIBNAME "EXTENSION-NAME") 
 set(GODOT_PROJECT_DIR "project" CACHE STRING "The directory of a Godot project folder")
 
-# Make sure all the dependencies are satisfied
-find_package(Python3 3.4 REQUIRED)
+# Находим ZLIB (системный)
+find_package(ZLIB REQUIRED)
+
+# Используем встроенный модуль FindProtobuf
+find_package(Protobuf REQUIRED)
+
+# Для gRPC используем pkg-config
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GRPC REQUIRED grpc++ grpc)
+
+# Находим плагин grpc_cpp_plugin (обычно в protobuf-compiler-grpc)
+find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin REQUIRED)
+
+# Проверка наличия git для подмодуля
 find_program(GIT git REQUIRED)
 
 # Ensure godot-cpp submodule has been updated
@@ -17,7 +31,6 @@ if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/godot-cpp/src")
     message(NOTICE "godot-cpp bindings source not found")
     message(NOTICE "initializing/updating the godot-cpp submodule...")
 
-    # update the c++ bindings submodule to populate it with the necessary source for the library
     execute_process(
         COMMAND git submodule update --init godot-cpp
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -26,60 +39,78 @@ if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/godot-cpp/src")
 endif()
 add_subdirectory(godot-cpp SYSTEM)
 
-# When compiling for emscripten, this toolchainhack needs to be included.
-# set(CMAKE_PROJECT_<project-name>_INCLUDE ${godot-cpp_SOURCE_DIR}/cmake/emsdkHack.cmake)
-
-# Create the gen directory at configure time so IDEs can see generated headers immediately after generate_bindings
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/godot-cpp/gen/include")
 
-# Add godot-cpp's module path and include the exported functions.
-# This is made available for documentation generation
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${godot-cpp_SOURCE_DIR}/cmake")
 include(GodotCPPModule)
 
-# The godot-cpp target has some of useful properties attached that can be retrieved like so.
 get_target_property(GODOTCPP_SUFFIX godot::cpp GODOTCPP_SUFFIX)
 get_target_property(GODOTCPP_PLATFORM godot::cpp GODOTCPP_PLATFORM)
 
-# Now we can specify our own project which will inherit any global cmake properties or variables that have been defined.
-project(godot-cpp-template
-    VERSION 1.0
-    DESCRIPTION "This repository serves as a quickstart template for GDExtension development with Godot 4.0+."
-    HOMEPAGE_URL "https://github.com/enetheru/godot-cpp-template/tree/main"
-    LANGUAGES CXX
+# Настройка путей генерации gRPC
+set(PROTO_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
+set(PROTO_FILES "${PROTO_SRC_DIR}/murder_trivia.proto")
+
+set(GEN_PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/murder_trivia.pb.cc")
+set(GEN_PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/murder_trivia.pb.h")
+set(GEN_GRPC_SRCS  "${CMAKE_CURRENT_BINARY_DIR}/murder_trivia.grpc.pb.cc")
+set(GEN_GRPC_HDRS  "${CMAKE_CURRENT_BINARY_DIR}/murder_trivia.grpc.pb.h")
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+
+add_custom_command(
+    OUTPUT ${GEN_PROTO_SRCS} ${GEN_PROTO_HDRS} ${GEN_GRPC_SRCS} ${GEN_GRPC_HDRS}
+    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+    ARGS --proto_path=${PROTO_SRC_DIR}
+         --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
+         --grpc_out=${CMAKE_CURRENT_BINARY_DIR}
+         --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN}
+         ${PROTO_FILES}
+    DEPENDS ${PROTO_FILES}
+    COMMENT "Running C++ gRPC and Protocol Buffer compiler on ${PROTO_FILES}"
+    VERBATIM
 )
 
 add_library(${LIBNAME} SHARED)
 
 target_sources(${LIBNAME}
     PRIVATE
+    src/game_manager.cpp
+    src/game_manager.h
     src/register_types.cpp
     src/register_types.h
-    src/example_class.cpp
-    src/example_class.h
+    ${GEN_PROTO_SRCS}
+    ${GEN_GRPC_SRCS}
 )
 
-# Fetch a list of the xml files to use for documentation and add to our target
+target_include_directories(${LIBNAME} PRIVATE 
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROTOBUF_INCLUDE_DIRS}
+    ${GRPC_INCLUDE_DIRS}
+)
+
 file(GLOB_RECURSE DOC_XML LIST_DIRECTORIES NO CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/doc_classes/*.xml")
 
-# conditionally add doc data to compile output
 if(DOC_XML)
     if(GODOTCPP_TARGET MATCHES "editor|template_debug")
         target_doc_sources(${LIBNAME} "${DOC_XML}")
     endif()
 endif()
 
-target_link_libraries(${LIBNAME} PRIVATE godot-cpp)
+target_link_libraries(${LIBNAME} 
+    PRIVATE 
+    godot-cpp
+    ${GRPC_LIBRARIES}
+    ${PROTOBUF_LIBRARIES}
+    ZLIB::ZLIB
+)
 
-# Require at least C++17 for this target
 set_property(TARGET ${LIBNAME} PROPERTY CXX_STANDARD 17)
 
 set_target_properties(${LIBNAME}
     PROPERTIES
-    # The generator expression here prevents msvc from adding a Debug or Release subdir.
     RUNTIME_OUTPUT_DIRECTORY "$<1:${PROJECT_SOURCE_DIR}/bin/${GODOTCPP_PLATFORM}>"
-
-    PREFIX ""
+    PREFIX "lib"
     OUTPUT_NAME "${LIBNAME}${GODOTCPP_SUFFIX}"
 )
 
